@@ -1,7 +1,11 @@
 import 'dart:io';
 
 import 'package:atlas/plugin/ExternalStorage.dart';
+import 'package:atlas/widgets/MainContent.dart';
+import 'package:atlas/widgets/Tiles.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+//import 'package:flutter/rendering.dart';
 
 void main() => runApp(MainWidget());
 
@@ -13,6 +17,8 @@ class MainWidget extends StatefulWidget {
 class _MainWidgetState extends State<MainWidget> {
   String thisTitle = "首页";
   static var activeNavigate = 0;
+
+  Stream<FileSystemEntity> files;
 
   static var globeThemeData = ThemeData(
       // Define the default brightness and colors.
@@ -29,10 +35,9 @@ class _MainWidgetState extends State<MainWidget> {
   Future<void> initPath() async {
     String sdPath;
     sdPath = await ExternalStoragePath.externalStoragePath;
-
-    setState(() {
-      mainContent.add(Text(sdPath));
-    });
+    Directory sdDir = Directory(sdPath);
+    files = sdDir.list();
+    setState(() {});
   }
 
   @override
@@ -43,6 +48,7 @@ class _MainWidgetState extends State<MainWidget> {
 
   @override
   Widget build(BuildContext context) {
+//    debugPaintSizeEnabled = true;
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
@@ -51,16 +57,14 @@ class _MainWidgetState extends State<MainWidget> {
           ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.share),
+              icon: Icon(Icons.grid_on),
               onPressed: () {},
             )
           ],
         ),
-        body: ListView.builder(
-          itemCount: mainContent.length,
-          itemBuilder: (context, index) {
-            return mainContent[index];
-          },
+        body: Padding(
+          key: Key("contentView"),
+          padding: EdgeInsets.all(10.0),
         ),
         drawer: MainDrawerWidget(
           globeThemeData: globeThemeData,
@@ -89,7 +93,7 @@ class MainDrawerWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(top: 38.0),
+              padding: const EdgeInsets.only(top: 100.0),
               child: Row(
                 children: <Widget>[],
               ),
@@ -97,27 +101,6 @@ class MainDrawerWidget extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 38.0),
-                    child: Row(
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: ClipOval(
-                            child: Image.network(
-                              "https://avatars0.githubusercontent.com/u/25505798?s=460&u=89655f6863ad2cb2d4fb46dd19db4ccf2ba09d56&v=4",
-                              width: 80.0,
-                              height: 80.0,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          "未登录",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
                   ListTile(
                     leading: const Icon(Icons.home),
                     title: const Text('首页'),

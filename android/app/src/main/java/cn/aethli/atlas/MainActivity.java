@@ -1,8 +1,12 @@
 package cn.aethli.atlas;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Environment;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.io.File;
 
@@ -19,6 +23,20 @@ public class MainActivity extends FlutterActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "ExternalStorage")
                 .setMethodCallHandler(
                         (call, result) -> {
+
+                            if (ContextCompat.checkSelfPermission(this,
+                                    Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(this,
+                                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0
+                                );
+                            }
+                            if (ContextCompat.checkSelfPermission(this,
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(this,
+                                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0
+                                );
+                            }
+
                             if (call.method.equals("getExternalStoragePath")) {
                                 boolean sdCardExist = false;
                                 if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {

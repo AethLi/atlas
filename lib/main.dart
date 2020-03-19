@@ -2,9 +2,7 @@ import 'dart:io';
 
 import 'package:atlas/plugin/ExternalStorage.dart';
 import 'package:atlas/widgets/MainContent.dart';
-import 'package:atlas/widgets/Tiles.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 //import 'package:flutter/rendering.dart';
 
 void main() => runApp(MainWidget());
@@ -17,6 +15,7 @@ class MainWidget extends StatefulWidget {
 class _MainWidgetState extends State<MainWidget> {
   String thisTitle = "首页";
   static var activeNavigate = 0;
+  Widget mainContent;
 
   Stream<FileSystemEntity> files;
 
@@ -30,14 +29,19 @@ class _MainWidgetState extends State<MainWidget> {
         color: Colors.purple,
       ));
 
-  List<Widget> mainContent = <Widget>[];
-
   Future<void> initPath() async {
     String sdPath;
     sdPath = await ExternalStoragePath.externalStoragePath;
     Directory sdDir = Directory(sdPath);
     files = sdDir.list();
-    setState(() {});
+    setState(() {
+      mainContent = ContentView(
+        height: 200,
+        width: 200,
+        files: files as List,
+        type: mainContentType.LIST,
+      );
+    });
   }
 
   @override
@@ -63,8 +67,8 @@ class _MainWidgetState extends State<MainWidget> {
           ],
         ),
         body: Padding(
-          key: Key("contentView"),
           padding: EdgeInsets.all(10.0),
+          child: mainContent,
         ),
         drawer: MainDrawerWidget(
           globeThemeData: globeThemeData,

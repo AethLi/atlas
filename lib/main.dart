@@ -36,10 +36,10 @@ class _MainWidgetState extends State<MainWidget> {
     files = sdDir.list();
     setState(() {
       mainContent = ContentView(
-        height: 200,
-        width: 200,
-        files: files as List,
-        type: mainContentType.LIST,
+        height: 60,
+        width: 80,
+        files: files,
+        type: mainContentType.GRID,
       );
     });
   }

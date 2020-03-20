@@ -8,19 +8,23 @@ class ContentView extends StatefulWidget {
   final double width;
   final Stream<FileSystemEntity> files;
   final mainContentType type;
+  final Function directoryChangeCallBack;
+  final String currentPath;
 
   const ContentView(
       {Key key,
       @required this.height,
       @required this.width,
       @required this.files,
-      @required this.type})
+      @required this.type,
+      this.directoryChangeCallBack,
+      @required this.currentPath})
       : super(key: key);
 
   @override
   State createState() {
     List<FileSystemEntity> entities = List();
-
+    directoryChangeCallBack(currentPath);
     files.forEach((element) {
       entities.add(element);
     });
@@ -101,18 +105,17 @@ class DirectoryColumnTile extends StatelessWidget {
           },
           child: Column(
             children: <Widget>[
-              Positioned(
-                  top: 5,
-                  child: Container(
-                      height: width * 0.7,
-                      width: width,
-                      child: Center(
-                        child: Image.asset(
-                          "assets/images/directory.png",
-                          fit: BoxFit.contain,
-                          width: width * 0.7,
-                        ),
-                      ))),
+              Container(
+                  margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                  height: width * 0.7,
+                  width: width,
+                  child: Center(
+                    child: Image.asset(
+                      "assets/images/directory.png",
+                      fit: BoxFit.contain,
+                      width: width * 0.7,
+                    ),
+                  )),
               Container(
                 margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
                 child: Text(

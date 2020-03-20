@@ -19,6 +19,12 @@ class _MainWidgetState extends State<MainWidget> {
 
   Stream<FileSystemEntity> files;
 
+  void directoryChangeCallBack(String directoryName) {
+    setState(() {
+      thisTitle = directoryName;
+    });
+  }
+
   static var globeThemeData = ThemeData(
       // Define the default brightness and colors.
       brightness: Brightness.light,
@@ -31,22 +37,27 @@ class _MainWidgetState extends State<MainWidget> {
 
   Future<void> initPath() async {
     String sdPath;
-    sdPath = await ExternalStoragePath.externalStoragePath;
-    Directory sdDir = Directory(sdPath);
-    files = sdDir.list();
-    setState(() {
-      mainContent = ContentView(
-        height: 60,
-        width: 80,
-        files: files,
-        type: mainContentType.GRID,
-      );
+    ExternalStoragePath.externalStoragePath.then((value){
+      sdPath=value;
+      Directory sdDir = Directory(sdPath);
+      files = sdDir.list();
+      setState(() {
+        mainContent = ContentView(
+          height: 60,
+          width: 80,
+          files: files,
+          type: mainContentType.GRID,
+          directoryChangeCallBack: directoryChangeCallBack,
+          currentPath: sdPath,
+        );
+      });
     });
   }
 
   @override
   void initState() {
     super.initState();
+    sleep(Duration(seconds: 2));
     initPath();
   }
 

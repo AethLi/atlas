@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:atlas/plugin/ExternalStorage.dart';
-import 'package:atlas/widgets/MainContent.dart';
+import 'package:atlas/widgets/dialogs.dart';
+import 'package:atlas/widgets/mainContent.dart';
 import 'package:flutter/material.dart';
 //import 'package:flutter/rendering.dart';
 
-void main() => runApp(MainWidget());
+void main() => runApp(MaterialApp(
+      home: MainWidget(),
+    ));
 
 class MainWidget extends StatefulWidget {
   @override
@@ -20,9 +23,11 @@ class _MainWidgetState extends State<MainWidget> {
   Stream<FileSystemEntity> files;
 
   void directoryChangeCallBack(String directoryName) {
-    setState(() {
-      thisTitle = directoryName;
-    });
+    if (!mounted) return;
+    thisTitle = directoryName;
+//    setState(() {
+//      thisTitle = directoryName;
+//    });
   }
 
   static var globeThemeData = ThemeData(
@@ -37,8 +42,8 @@ class _MainWidgetState extends State<MainWidget> {
 
   Future<void> initPath() async {
     String sdPath;
-    ExternalStoragePath.externalStoragePath.then((value){
-      sdPath=value;
+    ExternalStoragePath.externalStoragePath.then((value) {
+      sdPath = value;
       Directory sdDir = Directory(sdPath);
       files = sdDir.list();
       setState(() {
@@ -61,6 +66,18 @@ class _MainWidgetState extends State<MainWidget> {
     initPath();
   }
 
+  Future<void> _layoutSwitch() async {
+    if (await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          double width = MediaQuery.of(context).size.width * 0.7;
+          return LayoutSwitcher(
+            width: width,
+          );
+        },
+        barrierDismissible: false)) {}
+  }
+
   @override
   Widget build(BuildContext context) {
 //    debugPaintSizeEnabled = true;
@@ -73,7 +90,9 @@ class _MainWidgetState extends State<MainWidget> {
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.grid_on),
-              onPressed: () {},
+              onPressed: () {
+                _layoutSwitch();
+              },
             )
           ],
         ),
@@ -118,7 +137,7 @@ class MainDrawerWidget extends StatelessWidget {
                 children: <Widget>[
                   ListTile(
                     leading: const Icon(Icons.home),
-                    title: const Text('首页'),
+                    title: const Text('本地'),
                     selected: activeNavigate == 0,
                     onTap: () {
                       activeNavigate = 0;
@@ -127,7 +146,7 @@ class MainDrawerWidget extends StatelessWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.forum),
-                    title: const Text('讨论'),
+                    title: const Text('局域网'),
                     selected: activeNavigate == 1,
                     onTap: () {
                       activeNavigate = 1;

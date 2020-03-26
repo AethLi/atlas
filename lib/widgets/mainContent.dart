@@ -99,8 +99,8 @@ class DirectoryColumnTile extends StatelessWidget {
     return Container(
         width: width,
         height: width,
-        child: Listener(
-          onPointerDown: (PointerDownEvent event) {
+        child: FlatButton(
+          onPressed: () {
             inToChildDir(name: name);
           },
           child: Column(

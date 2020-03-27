@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:atlas/plugin/ExternalStorage.dart';
+import 'package:atlas/value/globeValue.dart';
 import 'package:atlas/widgets/dialogs.dart';
 import 'package:atlas/widgets/mainContent.dart';
 import 'package:flutter/material.dart';
+
+///布局边缘信息
 //import 'package:flutter/rendering.dart';
 
 void main() => runApp(MaterialApp(
@@ -23,11 +26,7 @@ class _MainWidgetState extends State<MainWidget> {
   Stream<FileSystemEntity> files;
 
   void directoryChangeCallBack(String directoryName) {
-    if (!mounted) return;
     thisTitle = directoryName;
-//    setState(() {
-//      thisTitle = directoryName;
-//    });
   }
 
   static var globeThemeData = ThemeData(
@@ -41,10 +40,8 @@ class _MainWidgetState extends State<MainWidget> {
       ));
 
   Future<void> initPath() async {
-    String sdPath;
     ExternalStoragePath.externalStoragePath.then((value) {
-      sdPath = value;
-      Directory sdDir = Directory(sdPath);
+      Directory sdDir = Directory(value);
       files = sdDir.list();
       setState(() {
         mainContent = ContentView(
@@ -53,16 +50,16 @@ class _MainWidgetState extends State<MainWidget> {
           files: files,
           type: mainContentType.GRID,
           directoryChangeCallBack: directoryChangeCallBack,
-          currentPath: sdPath,
+          currentPath: value,
         );
       });
+      DirectoryStack.push(value);
     });
   }
 
   @override
   void initState() {
     super.initState();
-    sleep(Duration(seconds: 2));
     initPath();
   }
 
@@ -80,6 +77,7 @@ class _MainWidgetState extends State<MainWidget> {
 
   @override
   Widget build(BuildContext context) {
+    ///布局边缘信息
 //    debugPaintSizeEnabled = true;
     return MaterialApp(
       home: Scaffold(
@@ -89,7 +87,7 @@ class _MainWidgetState extends State<MainWidget> {
           ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.grid_on),
+              icon: Icon(Icons.format_list_bulleted),
               onPressed: () {
                 _layoutSwitch();
               },

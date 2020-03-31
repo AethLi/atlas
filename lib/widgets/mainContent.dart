@@ -1,84 +1,101 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 
 class ContentView extends StatefulWidget {
-  final double height;
-  final double width;
-  final Stream<FileSystemEntity> files;
-  final mainContentType type;
   final Function directoryChangeCallBack;
   final String currentPath;
+  final State<ContentView> state;
 
   const ContentView(
       {Key key,
-      @required this.height,
-      @required this.width,
-      @required this.files,
-      @required this.type,
       this.directoryChangeCallBack,
-      @required this.currentPath})
+      this.currentPath,
+      @required this.state})
       : super(key: key);
 
   @override
   State createState() {
-    List<FileSystemEntity> entities = List();
-    directoryChangeCallBack(currentPath);
-    files.forEach((element) {
-      entities.add(element);
-    });
-    switch (type) {
-      case mainContentType.GRID:
-        return _ContentGridViewState(height, width, entities);
-      case mainContentType.LIST:
-        return _ContentListViewState(height, width, entities);
+    return state;
+  }
+}
+
+class ContentListViewState extends State<ContentView> {
+  final double height;
+  final double width;
+  final Stream<FileSystemEntity> files;
+
+  ContentListViewState(this.height, this.width, this.files);
+
+  @override
+  Widget build(BuildContext context) {
+    if (files != null) {
+      return ListView(
+        children: <Widget>[
+          StreamBuilder<FileSystemEntity>(
+            stream: files,
+            builder: (BuildContext context,
+                AsyncSnapshot<FileSystemEntity> snapshot) {
+              return DirectoryColumnTile(
+                name: basename(snapshot.data.path),
+                width: width,
+              );
+            },
+          )
+        ],
+      );
+    } else {
+      return Container();
     }
-    return null;
   }
 }
 
-class _ContentListViewState extends State<ContentView> {
+class ContentGridViewState extends State<ContentView> {
   final double height;
   final double width;
-  final List<FileSystemEntity> files;
+  StreamController controller=StreamController();
 
-  _ContentListViewState(this.height, this.width, this.files);
+
+  ContentGridViewState({this.height, this.width});
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-        itemCount: files.length,
-        itemBuilder: (context, index) {
-          return DirectoryColumnTile(
-            name: basename(files[index].path),
-            width: width,
-          );
-        });
-  }
-}
-
-class _ContentGridViewState extends State<ContentView> {
-  final double height;
-  final double width;
-  final List<FileSystemEntity> files;
-
-  _ContentGridViewState(this.height, this.width, this.files);
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-        itemCount: files.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, //todo 动态计算每行显示多少个
-            childAspectRatio: 1.1 //todo 动态计算宽高比
-            ),
-        itemBuilder: (context, index) {
-          return DirectoryColumnTile(
-            name: basename(files[index].path),
-            width: width,
-          );
-        });
+    Stream<List> filesList=controller.stream;
+    return GridView(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, childAspectRatio: 1.1),
+      children: <Widget>[
+        StreamBuilder<List>(
+          stream: filesList,
+          builder:
+              (BuildContext context, AsyncSnapshot<List> snapshot) {
+            if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+            switch (snapshot.connectionState) {
+              case ConnectionState.none:
+                return Text('Select lot');
+              case ConnectionState.waiting:
+                print("waiting");
+                return Text('Awaiting bids...');
+              case ConnectionState.active:
+                print(snapshot.data.path + "active");
+                return DirectoryColumnTile(
+                  name: basename(snapshot.data.path),
+                  width: width,
+                );
+              case ConnectionState.done:
+                print(snapshot.data.path);
+                return DirectoryColumnTile(
+                  name: basename(snapshot.data.path),
+                  width: width,
+                );
+            }
+            return Container();
+          },
+        )
+      ],
+    );
   }
 }
 
@@ -92,8 +109,6 @@ class DirectoryColumnTile extends StatelessWidget {
       {Key key, @required this.name, @required this.width})
       : super(key: key);
 
-  Function inToChildDir({@required String name}) {}
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -101,7 +116,7 @@ class DirectoryColumnTile extends StatelessWidget {
         height: width,
         child: FlatButton(
           onPressed: () {
-            inToChildDir(name: name);
+            //todo not achieved
           },
           child: Column(
             children: <Widget>[

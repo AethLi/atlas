@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:atlas/plugin/ExternalStorage.dart';
+import 'package:atlas/value/globeValue.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 
@@ -19,6 +21,19 @@ class ContentView extends StatefulWidget {
   @override
   State createState() {
     return state;
+  }
+
+  static Future<List<FileSystemEntity>> initPath() async {
+    List<FileSystemEntity> files = List();
+    ExternalStoragePath.externalStoragePath.then((value) {
+      Directory sdDir = Directory(value);
+      Stream<FileSystemEntity> fileStream = sdDir.list();
+      fileStream.forEach((element) {
+        files.add(element);
+      });
+      DirectoryStack.push(value);
+    });
+    return files;
   }
 }
 
@@ -55,46 +70,32 @@ class ContentListViewState extends State<ContentView> {
 class ContentGridViewState extends State<ContentView> {
   final double height;
   final double width;
-  StreamController controller=StreamController();
-
 
   ContentGridViewState({this.height, this.width});
 
   @override
   Widget build(BuildContext context) {
-    Stream<List> filesList=controller.stream;
-    return GridView(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, childAspectRatio: 1.1),
-      children: <Widget>[
-        StreamBuilder<List>(
-          stream: filesList,
-          builder:
-              (BuildContext context, AsyncSnapshot<List> snapshot) {
-            if (snapshot.hasError) return Text('Error: ${snapshot.error}');
-            switch (snapshot.connectionState) {
-              case ConnectionState.none:
-                return Text('Select lot');
-              case ConnectionState.waiting:
-                print("waiting");
-                return Text('Awaiting bids...');
-              case ConnectionState.active:
-                print(snapshot.data.path + "active");
-                return DirectoryColumnTile(
-                  name: basename(snapshot.data.path),
-                  width: width,
-                );
-              case ConnectionState.done:
-                print(snapshot.data.path);
-                return DirectoryColumnTile(
-                  name: basename(snapshot.data.path),
-                  width: width,
-                );
-            }
-            return Container();
-          },
-        )
-      ],
+    return FutureBuilder<List>(
+      future: ContentView.initPath(),
+      builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
+        List<Widget> children=List();
+        if (snapshot.hasData) {
+          snapshot.data.forEach((element) {
+            print(element.path);
+            children.add(DirectoryColumnTile(
+                name: basename((element as FileSystemEntity).path),
+                width: width));
+          });
+        } else if (snapshot.hasError) {
+          //todo error needs be solved
+        } else {
+          //todo waiting needs be solved
+        }
+        return GridView(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, childAspectRatio: 1.1),
+            children: children);
+      },
     );
   }
 }
@@ -134,7 +135,7 @@ class DirectoryColumnTile extends StatelessWidget {
               Container(
                 margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
                 child: Text(
-                  //todo 动态计算字体大小
+                  //todo dynamic font size
                   name,
                   textAlign: TextAlign.center,
                 ),

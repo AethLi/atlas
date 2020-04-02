@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:atlas/widgets/dialogs.dart';
 import 'package:flutter/material.dart';
 
-import 'plugin/ExternalStorage.dart';
-import 'value/globeValue.dart';
 import 'widgets/mainContent.dart';
 
 void main() => runApp(MaterialApp(
@@ -18,7 +16,6 @@ class MainWidget extends StatelessWidget {
   final State<ContentView> contentViewState = ContentGridViewState(
     height: 60,
     width: 80,
-    filesList: null,
   );
 
   static var globeThemeData = ThemeData(
@@ -47,21 +44,10 @@ class MainWidget extends StatelessWidget {
     titleWidgetState.changeTitle(title);
   };
 
-  Future<void> initPath() async {
-    ExternalStoragePath.externalStoragePath.then((value) {
-      Directory sdDir = Directory(value);
-      Stream<FileSystemEntity> files = sdDir.list();
-      files.forEach((element) {
-        print(element.path);
-      });
-      DirectoryStack.push(value);
-      (contentViewState as ContentGridViewState).thisFiles = files;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
-    initPath();
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(

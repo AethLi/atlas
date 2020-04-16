@@ -1,84 +1,102 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:atlas/plugin/ExternalStorage.dart';
+import 'package:atlas/value/globeValue.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 
 class ContentView extends StatefulWidget {
-  final double height;
-  final double width;
-  final Stream<FileSystemEntity> files;
-  final mainContentType type;
   final Function directoryChangeCallBack;
   final String currentPath;
+  final State<ContentView> state;
 
   const ContentView(
       {Key key,
-      @required this.height,
-      @required this.width,
-      @required this.files,
-      @required this.type,
       this.directoryChangeCallBack,
-      @required this.currentPath})
+      this.currentPath,
+      @required this.state})
       : super(key: key);
 
   @override
   State createState() {
-    List<FileSystemEntity> entities = List();
-    directoryChangeCallBack(currentPath);
-    files.forEach((element) {
-      entities.add(element);
+    return state;
+  }
+
+  static Future<List<FileSystemEntity>> initPath() async {
+    List<FileSystemEntity> files = List();
+    ExternalStoragePath.externalStoragePath.then((value) {
+      Directory sdDir = Directory(value);
+      Stream<FileSystemEntity> fileStream = sdDir.list();
+      fileStream.forEach((element) {
+        files.add(element);
+      });
+      DirectoryStack.push(value);
     });
-    switch (type) {
-      case mainContentType.GRID:
-        return _ContentGridViewState(height, width, entities);
-      case mainContentType.LIST:
-        return _ContentListViewState(height, width, entities);
+    return files;
+  }
+}
+
+class ContentListViewState extends State<ContentView> {
+  final double height;
+  final double width;
+  final Stream<FileSystemEntity> files;
+
+  ContentListViewState(this.height, this.width, this.files);
+
+  @override
+  Widget build(BuildContext context) {
+    if (files != null) {
+      return ListView(
+        children: <Widget>[
+          StreamBuilder<FileSystemEntity>(
+            stream: files,
+            builder: (BuildContext context,
+                AsyncSnapshot<FileSystemEntity> snapshot) {
+              return DirectoryColumnTile(
+                name: basename(snapshot.data.path),
+                width: width,
+              );
+            },
+          )
+        ],
+      );
+    } else {
+      return Container();
     }
-    return null;
   }
 }
 
-class _ContentListViewState extends State<ContentView> {
+class ContentGridViewState extends State<ContentView> {
   final double height;
   final double width;
-  final List<FileSystemEntity> files;
 
-  _ContentListViewState(this.height, this.width, this.files);
+  ContentGridViewState({this.height, this.width});
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-        itemCount: files.length,
-        itemBuilder: (context, index) {
-          return DirectoryColumnTile(
-            name: basename(files[index].path),
-            width: width,
-          );
-        });
-  }
-}
-
-class _ContentGridViewState extends State<ContentView> {
-  final double height;
-  final double width;
-  final List<FileSystemEntity> files;
-
-  _ContentGridViewState(this.height, this.width, this.files);
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-        itemCount: files.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, //todo 动态计算每行显示多少个
-            childAspectRatio: 1.1 //todo 动态计算宽高比
-            ),
-        itemBuilder: (context, index) {
-          return DirectoryColumnTile(
-            name: basename(files[index].path),
-            width: width,
-          );
-        });
+    return FutureBuilder<List>(
+      future: ContentView.initPath(),
+      builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
+        List<Widget> children=List();
+        if (snapshot.hasData) {
+          snapshot.data.forEach((element) {
+            print(element.path);
+            children.add(DirectoryColumnTile(
+                name: basename((element as FileSystemEntity).path),
+                width: width));
+          });
+        } else if (snapshot.hasError) {
+          //todo error needs be solved
+        } else {
+          //todo waiting needs be solved
+        }
+        return GridView(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, childAspectRatio: 1.1),
+            children: children);
+      },
+    );
   }
 }
 
@@ -92,8 +110,6 @@ class DirectoryColumnTile extends StatelessWidget {
       {Key key, @required this.name, @required this.width})
       : super(key: key);
 
-  Function inToChildDir({@required String name}) {}
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -101,7 +117,7 @@ class DirectoryColumnTile extends StatelessWidget {
         height: width,
         child: FlatButton(
           onPressed: () {
-            inToChildDir(name: name);
+            //todo not achieved
           },
           child: Column(
             children: <Widget>[
@@ -119,7 +135,7 @@ class DirectoryColumnTile extends StatelessWidget {
               Container(
                 margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
                 child: Text(
-                  //todo 动态计算字体大小
+                  //todo dynamic font size
                   name,
                   textAlign: TextAlign.center,
                 ),

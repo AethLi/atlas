@@ -50,6 +50,11 @@ public class MainActivity extends FlutterActivity {
                             }
                         }
                 );
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "smb").setMethodCallHandler(
+                (call, result) -> {
+
+                }
+        );
     }
 
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:atlas/plugin/Smb.dart';
 import 'package:atlas/widgets/dialogs.dart';
 import 'package:flutter/material.dart';
 
@@ -86,6 +87,10 @@ class MainDrawerWidget extends StatelessWidget {
   const MainDrawerWidget({Key key, @required this.globeThemeData})
       : super(key: key);
 
+  static Future<List> getLanComputer() async {
+    Smb.externalStoragePath.then((value) => null);
+    return null;
+  }
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -109,13 +114,14 @@ class MainDrawerWidget extends StatelessWidget {
                     title: const Text('本地'),
                     selected: activeNavigate == 0,
                     onTap: () {
+                      getLanComputer();
                       activeNavigate = 0;
                       Navigator.pop(context);
                     },
                   ),
                   ListTile(
                     leading: const Icon(Icons.forum),
-                    title: const Text('局域网'),
+                    title: const Text('局域网Smb'),
                     selected: activeNavigate == 1,
                     onTap: () {
                       activeNavigate = 1;

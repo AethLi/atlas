@@ -78,7 +78,7 @@ class ContentGridViewState extends State<ContentView> {
     return FutureBuilder<List>(
       future: ContentView.initPath(),
       builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
-        List<Widget> children=List();
+        List<Widget> children = List();
         if (snapshot.hasData) {
           snapshot.data.forEach((element) {
             print(element.path);

@@ -1,20 +1,25 @@
 package cn.aethli.atlas.plugins;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.pm.PackageManager;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
-import android.text.format.Formatter;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkInfo;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.annotation.RequiresApi;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import cn.aethli.atlas.model.LanComputer;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -29,44 +34,78 @@ public class Smb implements FlutterPlugin, ActivityAware {
     private static MethodChannel channel;
     private Activity activity;
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
         channel = new MethodChannel(binding.getFlutterEngine().getDartExecutor(), "smb");
         channel.setMethodCallHandler((call, result) -> {
+            if (call.method.equals("getLanInfo")) {
+                Map<String, Object> info = new HashMap<>();
+                //get wifi info
+                ConnectivityManager connMgr =
+                        (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+                for (Network network : connMgr.getAllNetworks()) {
+                    NetworkInfo networkInfo = connMgr.getNetworkInfo(network);
+                    //if wifi conn
+                    if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                        LinkProperties linkProperties = connMgr.getLinkProperties(network);
+                        List<LinkAddress> linkAddresses = linkProperties.getLinkAddresses();
+                        //ipv4 ipv6 condition
+                        for (LinkAddress linkAddress : linkAddresses) {
+                            if (linkAddress.getAddress() instanceof Inet4Address) {
 
-            if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_WIFI_STATE}, 0);
-            }
-
-            if (call.method.equals("getLanComputers")) {
-                List<LanComputer> computers = new ArrayList<>();
-                WifiManager wifiManager = (WifiManager) activity.getSystemService("wifi");
-                WifiInfo connectionInfo = wifiManager.getConnectionInfo();
-                int currentIp = connectionInfo.getIpAddress();
-                if (currentIp != 0) {
-                    try {
-                        SmbFile smbFile = new SmbFile("smb://");
-                        smbFile.setConnectTimeout(2000);
-                        for (SmbFile listFiles : smbFile.listFiles()) {
-                            SmbFile[] listFiles2 = listFiles.listFiles();
-                            for (int i2 = 0; i2 < listFiles2.length; i2++) {
-                                String substring = listFiles2[i2].getName().substring(0, listFiles2[i2].getName().length() - 1);
-                                UniAddress byName = UniAddress.getByName(substring);
-                                if (byName != null) {
-                                    computers.add(new LanComputer(substring, byName.getHostAddress()));
+                                //get binary ipv4 address
+                                byte[] address = linkAddress.getAddress().getAddress();
+                                StringBuilder addressBuilder = new StringBuilder();
+                                for (byte b : address) {
+                                    StringBuilder partBuilder = new StringBuilder();
+                                    partBuilder.append(Integer.toBinaryString(b & 0xFF));
+                                    for (int i = partBuilder.length(); i < 8; i++) {
+                                        partBuilder.insert(0, "0");
+                                    }
+                                    addressBuilder.append(partBuilder.toString());
                                 }
-
+                                String addressStr = addressBuilder.toString();
+                                byte[] addressBytes = new byte[32];
+                                char[] addressChars = addressStr.toCharArray();
+                                for (int i = 0; i < addressChars.length; i++) {
+                                    addressBytes[i] = Byte.parseByte(addressChars[i]+"");
+                                }
+                                //get prefix length
+                                int prefixLength = linkAddress.getPrefixLength();
+                                info.put("ipv4", addressBytes);
+                                info.put("prefixLength", prefixLength);
+                                result.success(info);
+                            } else if (linkAddress.getAddress() instanceof Inet6Address) {
+                                //todo ipv6 support
                             }
                         }
-                    } catch (UnknownHostException | SmbException | MalformedURLException e) {
-                        e.printStackTrace();
                     }
-                    String formatIpAddress = Formatter.formatIpAddress(currentIp);
-                    String substring = formatIpAddress.substring(0, formatIpAddress.lastIndexOf(46) + 1);
+                }
+            } else if (call.method.equals("getLanComputerSimply")) {
+                List<LanComputer> computers = new ArrayList<>();
+                //simple method get smb servers(never work)
+                try {
+                    SmbFile smbFile = new SmbFile("smb://");
+                    smbFile.setConnectTimeout(2000);
+                    for (SmbFile listFiles : smbFile.listFiles()) {
+                        SmbFile[] listFiles2 = listFiles.listFiles();
+                        for (int i2 = 0; i2 < listFiles2.length; i2++) {
+                            String substring = listFiles2[i2].getName().substring(0, listFiles2[i2].getName().length() - 1);
+                            UniAddress byName = UniAddress.getByName(substring);
+                            if (byName != null) {
+                                computers.add(new LanComputer(substring, byName.getHostAddress()));
+                            }
 
-
+                        }
+                    }
+                } catch (UnknownHostException | SmbException | MalformedURLException | ExceptionInInitializerError | NoClassDefFoundError e) {
+                    e.printStackTrace();
                 }
                 result.success(computers);
+            } else if (call.method.equals("getLanComputer")) {
+                byte[][] ips = call.argument("ips");
+
             }
         });
 

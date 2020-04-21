@@ -14,9 +14,11 @@ import androidx.annotation.RequiresApi;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +29,24 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.MethodChannel;
 import jcifs.UniAddress;
+import jcifs.netbios.NbtAddress;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 
 public class Smb implements FlutterPlugin, ActivityAware {
     private static MethodChannel channel;
     private Activity activity;
+    private List<InetAddress> addresses=new ArrayList<>();
+
+    public static String longToIP(long longIp) {
+        return (longIp >>> 24) +
+                "." +
+                ((longIp & 0x00FFFFFF) >>> 16) +
+                "." +
+                ((longIp & 0x0000FFFF) >>> 8) +
+                "." +
+                (longIp & 0x000000FF);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -69,7 +83,7 @@ public class Smb implements FlutterPlugin, ActivityAware {
                                 byte[] addressBytes = new byte[32];
                                 char[] addressChars = addressStr.toCharArray();
                                 for (int i = 0; i < addressChars.length; i++) {
-                                    addressBytes[i] = Byte.parseByte(addressChars[i]+"");
+                                    addressBytes[i] = Byte.parseByte(addressChars[i] + "");
                                 }
                                 //get prefix length
                                 int prefixLength = linkAddress.getPrefixLength();
@@ -103,8 +117,11 @@ public class Smb implements FlutterPlugin, ActivityAware {
                     e.printStackTrace();
                 }
                 result.success(computers);
-            } else if (call.method.equals("getLanComputer")) {
-                byte[][] ips = call.argument("ips");
+            } else if (call.method.equals("getLanComputers")) {
+                List ips = call.arguments();
+                for (Object ip : ips) {
+                    scanTask(longToIP((Long) ip));
+                }
 
             }
         });
@@ -135,5 +152,20 @@ public class Smb implements FlutterPlugin, ActivityAware {
     @Override
     public void onDetachedFromActivity() {
 
+    }
+
+    private void scanTask(String ip) {
+        new Thread(() -> {
+            try {
+                NbtAddress[] allByAddress = NbtAddress.getAllByAddress(ip);
+                if (allByAddress != null) {
+                    if (allByAddress.length > 0) {
+                        addresses.add(allByAddress[0].getInetAddress());
+                        System.out.println(Arrays.toString(allByAddress));
+                    }
+                }
+            } catch (UnknownHostException e) {
+            }
+        }).start();
     }
 }

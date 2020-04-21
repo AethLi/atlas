@@ -84,13 +84,6 @@ class MainDrawerWidget extends StatelessWidget {
   const MainDrawerWidget({Key key, @required this.globeThemeData})
       : super(key: key);
 
-  void lanSmb() {
-    Smb.lanInfo.then((value) {
-      if (value != null) {
-        Smb.lanComputerSimply.then((value) => null);
-      }//todo null solve
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +108,6 @@ class MainDrawerWidget extends StatelessWidget {
                     title: const Text('本地'),
                     selected: activeNavigate == 0,
                     onTap: () {
-                      lanSmb();
                       activeNavigate = 0;
                       Navigator.pop(context);
                     },
@@ -125,6 +117,8 @@ class MainDrawerWidget extends StatelessWidget {
                     title: const Text('局域网Smb'),
                     selected: activeNavigate == 1,
                     onTap: () {
+                      Smb.lanComputerInvoke((value)=>{});
+
                       activeNavigate = 1;
                       Navigator.pop(context);
                     },

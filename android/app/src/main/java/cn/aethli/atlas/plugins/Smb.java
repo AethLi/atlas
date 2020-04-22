@@ -36,7 +36,7 @@ import jcifs.smb.SmbFile;
 public class Smb implements FlutterPlugin, ActivityAware {
     private static MethodChannel channel;
     private Activity activity;
-    private List<InetAddress> addresses=new ArrayList<>();
+    private List<InetAddress> addresses = new ArrayList<>();
 
     public static String longToIP(long longIp) {
         return (longIp >>> 24) +
@@ -122,6 +122,7 @@ public class Smb implements FlutterPlugin, ActivityAware {
                 for (Object ip : ips) {
                     scanTask(longToIP((Long) ip));
                 }
+                channel.invokeMethod("getLanComputerCallBack", "");
 
             }
         });

@@ -117,8 +117,7 @@ class MainDrawerWidget extends StatelessWidget {
                     title: const Text('局域网Smb'),
                     selected: activeNavigate == 1,
                     onTap: () {
-                      Smb.lanComputerInvoke((value)=>{});
-
+                      Smb.getLanComputers();
                       activeNavigate = 1;
                       Navigator.pop(context);
                     },

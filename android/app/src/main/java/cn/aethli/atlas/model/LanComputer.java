@@ -1,5 +1,8 @@
 package cn.aethli.atlas.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LanComputer {
     private String hostName;
     private String ipv4;
@@ -35,5 +38,13 @@ public class LanComputer {
 
     public void setIpv6(String ipv6) {
         this.ipv6 = ipv6;
+    }
+
+    public Map<String, String> toMap() {
+        Map<String, String> result = new HashMap<>();
+        result.put("hostName", hostName);
+        result.put("ipv4", ipv4);
+        result.put("ipv6", ipv6);
+        return result;
     }
 }

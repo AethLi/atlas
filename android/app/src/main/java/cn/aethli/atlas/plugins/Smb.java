@@ -8,17 +8,14 @@ import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.util.ArrayMap;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +36,7 @@ public class Smb implements FlutterPlugin, ActivityAware {
     private static MethodChannel channel;
     private Activity activity;
 
-    private static String longToIP(long longIp) {
+    private static String long2IP(long longIp) {
         return (longIp >>> 24) +
                 "." +
                 ((longIp & 0x00FFFFFF) >>> 16) +
@@ -57,8 +54,15 @@ public class Smb implements FlutterPlugin, ActivityAware {
         return ip & netMask;
     }
 
+    private static long byteArray2LongIp(byte[] ipBytes) {
+        long ipLong = 0;
+        for (int i = 0; i < ipBytes.length; i++) {
+            ipLong += (ipBytes[i] & 0xff) * Math.pow(2, (3 - i) * 8);
+        }
+        return ipLong;
+    }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
         channel = new MethodChannel(binding.getFlutterEngine().getDartExecutor(), "smb");
@@ -101,7 +105,6 @@ public class Smb implements FlutterPlugin, ActivityAware {
     private static class getLanInfoTask extends AsyncTask<Map, Void, Void> {
 
 
-        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         protected Void doInBackground(Map... params) {
             Map<String, Object> info = new ArrayMap<>();
@@ -119,10 +122,7 @@ public class Smb implements FlutterPlugin, ActivityAware {
 
                             //get long ipv4 address
                             byte[] address = linkAddress.getAddress().getAddress();
-                            long addressLong = 0;
-                            for (int i = 0; i < address.length; i++) {
-                                addressLong += (address[i] & 0xff) * Math.pow(2, (3 - i) * 8);
-                            }
+                            long addressLong = byteArray2LongIp(address);
                             //get prefix length
                             int prefixLength = linkAddress.getPrefixLength();
 
@@ -135,7 +135,7 @@ public class Smb implements FlutterPlugin, ActivityAware {
                             long networkSegment = getNetworkSegment(addressLong, prefixLength);
                             ExecutorService executorService = Executors.newFixedThreadPool(10);
                             for (long i = 1; i < Math.pow(2, 32 - prefixLength) - 1; i++) {
-                                executorService.execute(new IpScannerTask(networkSegment + i));
+                                new IpScannerAsyncTask().executeOnExecutor(executorService, long2IP(networkSegment + i));
                             }
 
                         } else if (linkAddress.getAddress() instanceof Inet6Address) {
@@ -171,35 +171,43 @@ public class Smb implements FlutterPlugin, ActivityAware {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            ((MethodChannel) Objects.requireNonNull(maps[0].get("channel"))).invokeMethod("", computers);
+//            ((MethodChannel) Objects.requireNonNull(maps[0].get("channel"))).invokeMethod("", computers);
             //todo result call back
             return null;
         }
     }
 
-    private static class IpScannerTask implements Runnable {
-        private long ip;
-
-        IpScannerTask(long ip) {
-            this.ip = ip;
-        }
+    private static class IpScannerAsyncTask extends AsyncTask<String, Void, LanComputer> {
 
         @Override
-        public void run() {
+        protected LanComputer doInBackground(@NonNull String... strings) {
+            String ip = strings[0];
             try {
-                NbtAddress[] nbtAddresses = NbtAddress.getAllByAddress(longToIP(ip));
-                
+                NbtAddress[] nbtAddresses = NbtAddress.getAllByAddress(ip);
+
                 if (nbtAddresses != null) {
                     for (NbtAddress byAddress : nbtAddresses) {
+                        if (!(byAddress.isGroupAddress() || byAddress.getHostName().contains("WORKGROUP"))) {
+                            LanComputer computer = new LanComputer();
+                            computer.setHostName(byAddress.getHostName());
+                            computer.setIpv4(long2IP(byteArray2LongIp(byAddress.getAddress())));
+                            return computer;
+                        }
+                    }
 
-                    }
-                    if (nbtAddresses.length > 0) {
-                        //todo return update
-                        System.out.println(Arrays.toString(nbtAddresses));
-                    }
                 }
             } catch (UnknownHostException e) {
             }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(LanComputer lanComputer) {
+            if (lanComputer == null) {
+                return;
+            }
+            channel.invokeMethod("computersUpdate", lanComputer.toMap());
         }
     }
+
 }

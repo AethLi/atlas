@@ -20,6 +20,7 @@ class _SmbContentState extends State<SmbContent> {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case "computersUpdate":
+          print(call.arguments);
           break;
         default:
           break;

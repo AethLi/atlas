@@ -8,6 +8,9 @@ class SmbContent extends StatefulWidget {
 
 class _SmbContentState extends State<SmbContent> {
   static const MethodChannel _channel = const MethodChannel('smb');
+  static final Function layoutSwitchCallBack = () {
+
+  };
 
   @override
   Widget build(BuildContext context) {

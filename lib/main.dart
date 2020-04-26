@@ -10,9 +10,13 @@ void main() => runApp(MaterialApp(
       home: MainWidget(),
     ));
 
-class MainWidget extends StatelessWidget {
-  static var activeNavigate = 0;
-  static TitleWidgetState titleWidgetState = TitleWidgetState("首页");
+class MainWidget extends StatefulWidget {
+  @override
+  _MainWidgetState createState() => _MainWidgetState();
+}
+
+class _MainWidgetState extends State<MainWidget> {
+  String title = "首页";
   final State<ContentView> contentViewState = ContentGridViewState(
     height: 60,
     width: 80,
@@ -40,8 +44,8 @@ class MainWidget extends StatelessWidget {
         barrierDismissible: false)) {}
   }
 
-  static final Function directoryChangeCallBack = (String title) {
-    titleWidgetState.changeTitle(title);
+  final Function directoryChangeCallBack = (String title) {
+    title = title;
   };
 
   @override
@@ -49,9 +53,7 @@ class MainWidget extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: _TitleWidget(
-            titleWidgetState: titleWidgetState,
-          ),
+          title: Text("首页"),
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.format_list_bulleted),
@@ -83,7 +85,6 @@ class MainDrawerWidget extends StatelessWidget {
 
   const MainDrawerWidget({Key key, @required this.globeThemeData})
       : super(key: key);
-
 
   @override
   Widget build(BuildContext context) {
@@ -137,34 +138,6 @@ class MainDrawerWidget extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _TitleWidget extends StatefulWidget {
-  final TitleWidgetState titleWidgetState;
-
-  const _TitleWidget({Key key, this.titleWidgetState}) : super(key: key);
-
-  @override
-  TitleWidgetState createState() => titleWidgetState;
-}
-
-class TitleWidgetState extends State<_TitleWidget> {
-  String title;
-
-  TitleWidgetState(this.title);
-
-  void changeTitle(String title) {
-    setState(() {
-      this.title = title;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Text(title),
     );
   }
 }

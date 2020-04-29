@@ -4,12 +4,16 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Environment;
+import android.os.StatFs;
+import android.text.format.Formatter;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -47,6 +51,18 @@ public class ExternalStorage implements FlutterPlugin, ActivityAware {
                     sdPath = Environment.getExternalStorageDirectory();//获取根目录
                     result.success(sdPath.toString());
                 }
+            } else if (call.method.equals("getExternalSpaceInfo")) {
+                Map<String, String> info = new HashMap<>();
+                long freeSpace = Environment.getDataDirectory().getFreeSpace();
+//                long rootSpace = new StatFs("/").getAvailableBytes();
+                long externalStorageSpace = new StatFs(Environment.getExternalStorageDirectory().toString()).getAvailableBytes();
+                info.put("freeSpace", Formatter.formatFileSize(this.activity, freeSpace));
+                info.put("localSpace", Formatter.formatFileSize(this.activity, /*rootSpace +*/ externalStorageSpace));
+                if (ExistSDCard()) {
+                    long SDFreeSpace = Environment.getExternalStorageDirectory().getFreeSpace();
+                    info.put("sd", Formatter.formatFileSize(this.activity, SDFreeSpace));
+                }
+                result.success(info);
             }
         });
     }
@@ -75,4 +91,14 @@ public class ExternalStorage implements FlutterPlugin, ActivityAware {
     public void onDetachedFromActivity() {
         this.activity = null;
     }
+
+    /**
+     * check sd card
+     *
+     * @return true:exist,false:not exist
+     */
+    private boolean ExistSDCard() {
+        return ContextCompat.getExternalFilesDirs(this.activity, null).length >= 2;
+    }
+
 }

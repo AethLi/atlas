@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:atlas/plugin/ExternalStorage.dart';
-import 'package:atlas/value/globeValue.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 
@@ -31,7 +30,8 @@ class ContentView extends StatefulWidget {
       fileStream.forEach((element) {
         files.add(element);
       });
-      DirectoryStack.push(value);
+//      UserActionStack.push(value);
+    //todo action record
     });
     return files;
   }

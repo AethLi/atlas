@@ -1,5 +1,6 @@
 import 'package:atlas/plugin/ExternalStorage.dart';
 import 'package:atlas/value/UserActionStack.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
@@ -85,6 +86,7 @@ class _IndexMenu {
 }
 
 class _IndexPageState extends State<IndexPage> {
+  UserActionStack actionStack = UserActionStack();
   static List<_IndexMenu> _indexMenus = [
     _IndexMenu(
         name: "主目录",
@@ -148,32 +150,43 @@ class _IndexPageState extends State<IndexPage> {
               },
             );
           }),
-    )
+    ),
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => (ExternalStoragePath.externalSpaceInfo.then((value) {
+              setState(() {
+                _indexContent.insert(
+                    0,
+                    Padding(
+                      padding: EdgeInsets.only(top: 15, bottom: 15),
+                      child: Divider(
+                        height: 5,
+                        color: Colors.purple,
+                        thickness: 1,
+                      ),
+                    ));
+                _indexContent.insert(
+                    0,
+                    Padding(
+                      padding: EdgeInsets.only(top: 15),
+                      child: CircularPercentIndicator(
+                        radius: 60,
+                        lineWidth: 5,
+                        percent: 0.3,
+                        center: Text(""),
+                        progressColor: Colors.purple,
+                      ),
+                    ));
+              });
+            })));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    ExternalStoragePath.externalSpaceInfo.then((value) {
-      if (mounted) {
-        _indexContent.insert(
-            0,
-            CircularPercentIndicator(
-              radius: 60,
-              lineWidth: 5,
-              percent: 0.3,
-              center: Text(""),
-              progressColor: Colors.purple,
-            ));
-      }
-    });
-    _indexContent.insert(
-        0,
-        Divider(
-          height: 5,
-          color: Colors.purple,
-          thickness: 1,
-        ));
-    UserActionStack actionStack = UserActionStack();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: _indexContent,
@@ -226,20 +239,7 @@ class _ContentContainerState extends State<ContentContainer> {
           ),
         ),
         actions: [
-//          IconButton(
-//            icon: Icon(Icons.home),
-//            onPressed: () {},
-//          ),
-//          IconButton(
-//            icon: Icon(Icons.search),
-//            onPressed: () {},
-//          ),
-//          IconButton(
-//            icon: Icon(Icons.grid_on),
-//            onPressed: () {
-//              _layoutSwitch(context);
-//            },
-//          )
+          //todo no actions
         ],
       ),
       body: IndexPage(),
